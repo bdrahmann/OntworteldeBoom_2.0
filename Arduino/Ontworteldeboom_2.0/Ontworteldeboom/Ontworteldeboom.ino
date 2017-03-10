@@ -38,23 +38,32 @@ String SMScode12 = "Testbericht Ontwortelde boom";
 String SMScode13 = "Alle sensoren van ontwortelde boom zijn stuk!";
 */
 
-#define LOG_R_INTERVAL  600000 // Raindrop interval 10 min
-uint32_t LOG_LL_INTERVAL = 0;  // SMS LaagWater interval bij start 0
-uint32_t syncTimeLL = 0; // time of last SMS LaagWater
+boolean resetStatus = false;	// externe reset
+
+//#define LOG_R_INTERVAL  600000 // Raindrop interval 10 min
+uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
+uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 
 const int Pomp1 = 2;			// pin 2 is aansturen pomp 1
 const int Pomp2 = 3;			// Pin 3 is aansturen pomp 2
 // const int Simpower = 7;		// voor de sim900 kaart Shield B-v1.1
 const int Simpower = 9;			// voor de Geeetech Sim900 kaart
 const int RG_sensor = 11;		// regensensor RG-11
+const int Pomp1Aan = 4;			// pomp1 staat aan signaal
 
-// int Pig = Pomp1;				// Starten met PominGebruik = pomp1
 
 // Globale waarde pompregeling
 int PompStatus = 0;				// toestand van de Pompstatus
 int PompStatusoud = 0;			// de vorige Pompstatus
 int handpomp1 = 0;				// geeft aan of pomp1 in handmatige status uit/aan is
 int handpomp2 = 0;				// geeft aan of pomp2 in handmatige status uit/aan is
+
+uint32_t AAN1_INTERVAL = 600000;	// pomp2 aan tijd 10 minuten
+uint32_t UIT1_INTERVAL = 300000;	// pomp2 uit tijd 5 minuten
+// TODO aan en uit tijden van buiten af instellen
+uint32_t looptijdaanuit = 0;	// loop tijdens het doorlopen van de aan-uit tijd
+boolean SWPomp1Aan = false;		// switch schakelt bij eerste doorkomst Pomp1 aan
+
 boolean sw_laagwater = true;	// begin met laagwater
 boolean laagwateroud;			// vorige meting laagwater
 uint32_t laagwater_delay = 0;	// tijdsvertraging in laagwater om dender te voorkomen (10000)
@@ -63,8 +72,8 @@ uint32_t looptijdLL = 0;		// loopt tijdens het testen van de laagwatervlotter
 // variabelen voor sensorcontrole
 boolean Rain_SMS_Gestuurd = false;	// stuur slechts ��n keer een SMS als alle sensoren stuk zijn
 boolean Droog = true;			// variable om droog vast te stellen
-uint32_t Droogtijd = 0;			// tijd om druppelsensoren nat te laten worden; van buiten instelbaar (20000)
-uint32_t DroogtijdLL = 0;		// loopt tijdens het testen van de Droogtijd
+uint32_t droogtijd = 0;			// tijd om druppelsensoren nat te laten worden; van buiten instelbaar (20000)
+uint32_t droogtijdLL = 0;		// loopt tijdens het testen van de Droogtijd
 
 // Global variable for SMS yes or no
 char SMScode = '0';			//stuur sms bij alarmsituaties, default uit
@@ -75,11 +84,11 @@ void setup() {
 	String PS;		// is de PrintString
 	
 	pinMode(Pomp1, OUTPUT);
-	digitalWrite(Pomp1, LOW);		// zet pomp1 uit. De pompen zijn active LOW
+	digitalWrite(Pomp1, LOW);	// zet pomp1 uit. De pompen zijn active LOW
 	pinMode(Pomp2, OUTPUT);
-	digitalWrite(Pomp2, LOW);		// zet pomp2 uit
-
-	pinMode(RG_sensor, INPUT);		// digital Pin to INPUT for the RG-11 sensor
+	digitalWrite(Pomp2, LOW);	// zet pomp2 uit
+	pinMode(Pomp1Aan, INPUT);	// digital Pin to INPUT for Pomp1 aan
+	pinMode(RG_sensor, INPUT);	// digital Pin to INPUT for the RG-11 sensor
 	
 	laagwateroud = digitalRead(VlotterLaag);	// lees de beginstand van de vlotter
 	
