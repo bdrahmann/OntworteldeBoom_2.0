@@ -1,4 +1,9 @@
-/*	Hier wordt vastgesteld wat de stand is van de vlotter die moet signaleren of er voldoende water in de bak staat.
+/* Ontwortelde Boom
+** versie 2.0
+**
+** 20170306
+**
+**  Hier wordt vastgesteld wat de stand is van de vlotter die moet signaleren of er voldoende water in de bak staat.
 **	Als er niet voldoende water in de bak staat, moet de pomp worden uitgeschakeld.
 **	digitalRead(Vlotterlaag) == HIGH als de vlotter  te weinig water in de bak meet.
 **	sw_laagwater wordt dan gezet.
