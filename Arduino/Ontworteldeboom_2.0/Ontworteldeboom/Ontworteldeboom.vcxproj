@@ -81,9 +81,6 @@
     <None Include="DuoPompRegeling.ino">
       <FileType>CppCode</FileType>
     </None>
-    <None Include="Laagwater.ino">
-      <FileType>CppCode</FileType>
-    </None>
     <None Include="Ontworteldeboom.ino">
       <FileType>CppCode</FileType>
     </None>

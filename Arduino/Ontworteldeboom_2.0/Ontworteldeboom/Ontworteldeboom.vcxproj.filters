@@ -18,7 +18,6 @@
     <None Include="Ontworteldeboom.ino" />
     <None Include="BT_code.ino" />
     <None Include="DuoPompRegeling.ino" />
-    <None Include="Laagwater.ino" />
     <None Include="SMS_afhandeling.ino" />
     <None Include="VerwerkSensoren.ino" />
   </ItemGroup>

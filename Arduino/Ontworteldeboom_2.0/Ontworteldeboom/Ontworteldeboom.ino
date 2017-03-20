@@ -47,6 +47,7 @@ uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 const int Pomp1 = 2;			// pin 2 is aansturen pomp 1
 const int Pomp2 = 3;			// Pin 3 is aansturen pomp 2
 // const int Simpower = 7;		// voor de sim900 kaart Shield B-v1.1
+const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH wordt gemeten
 const int Simpower = 9;			// voor de Geeetech Sim900 kaart
 const int RG_sensor = 11;		// regensensor RG-11
 const int Pomp1Aan = 4;			// pomp1 staat aan signaal
