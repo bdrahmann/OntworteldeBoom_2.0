@@ -30,13 +30,13 @@
 #include "RunningAverage.h"	// running average
 
 // TODO SMScodes aanpassen
-/*
+
 String SMScode08 = "De bak van de ontwortelde boom is leeg. HELP!";
 String SMScode10 = "RG-11 sensor droog; Pomp 1 van ontwortelde boom is uitgeschakeld!";
 String SMScode11 = "RG-11 sensor droog; Pomp 2 van ontwortelde boom is uitgeschakeld!";
 String SMScode12 = "Testbericht Ontwortelde boom";
 String SMScode13 = "Alle sensoren van ontwortelde boom zijn stuk!";
-*/
+
 
 boolean resetStatus = false;	// externe reset
 
@@ -44,7 +44,7 @@ boolean resetStatus = false;	// externe reset
 uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
 uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 
-const int Pomp1 = 2;			// pin 2 is aansturen pomp 1
+// const int Pomp1 = 2;			// pin 2 is aansturen pomp 1
 const int Pomp2 = 3;			// Pin 3 is aansturen pomp 2
 // const int Simpower = 7;		// voor de sim900 kaart Shield B-v1.1
 const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH wordt gemeten
@@ -56,14 +56,14 @@ const int Pomp1Aan = 4;			// pomp1 staat aan signaal
 // Globale waarde pompregeling
 int PompStatus = 0;				// toestand van de Pompstatus
 int PompStatusoud = 0;			// de vorige Pompstatus
-int handpomp1 = 0;				// geeft aan of pomp1 in handmatige status uit/aan is
+// int handpomp1 = 0;				// geeft aan of pomp1 in handmatige status uit/aan is
 int handpomp2 = 0;				// geeft aan of pomp2 in handmatige status uit/aan is
 
-uint32_t AAN1_INTERVAL = 600000;	// pomp2 aan tijd 10 minuten
-uint32_t UIT1_INTERVAL = 300000;	// pomp2 uit tijd 5 minuten
+uint32_t AAN1_INTERVAL = 120000;	// pomp2 aan tijd 2 minuten
+uint32_t UIT1_INTERVAL =  60000;	// pomp2 uit tijd 1 minuten
 // TODO aan en uit tijden van buiten af instellen
 uint32_t looptijdaanuit = 0;	// loop tijdens het doorlopen van de aan-uit tijd
-boolean SWPomp1Aan = false;		// switch schakelt bij eerste doorkomst Pomp1 aan
+boolean SWPomp1Aan = false;		// switch schakelt bij eerste doorkomst als Pomp1 aan staat
 
 boolean sw_laagwater = true;	// begin met laagwater
 boolean laagwateroud;			// vorige meting laagwater
@@ -84,8 +84,8 @@ boolean bericht_gestuurd = false;	// om te voorkomen dat sms testbericht meer da
 void setup() {
 	String PS;		// is de PrintString
 	
-	pinMode(Pomp1, OUTPUT);
-	digitalWrite(Pomp1, LOW);	// zet pomp1 uit. De pompen zijn active LOW
+	//pinMode(Pomp1, OUTPUT);
+	//digitalWrite(Pomp1, LOW);	// zet pomp1 uit. De pompen zijn active LOW
 	pinMode(Pomp2, OUTPUT);
 	digitalWrite(Pomp2, LOW);	// zet pomp2 uit
 	pinMode(Pomp1Aan, INPUT);	// digital Pin to INPUT for Pomp1 aan
@@ -97,7 +97,7 @@ void setup() {
 	Serial1.begin(19200);		// connection to GPRS network
 	Serial3.begin(19200);		// Default connection rate BT
 	Serial.println();
-	PS = "In setup is pomp 1 uitgezet. In setup is pomp 2 uitgezet"; Serial.println(PS);
+	PS = "In setup is pomp 2 uitgezet"; Serial.println(PS);
 		
 	/* EPROM plaats
 	0 = SMS code ja/nee = 1/0
@@ -110,12 +110,12 @@ void setup() {
 	telefoonnummer = "";
 	telefoonnummer = LeesEprom(1, 10);
 	Serial.print("telefoonnummer uit EPROM =  "); Serial.println(telefoonnummer);
-	Droogtijd = LeesEprom(11, 14).toInt()*1000;
+	droogtijd = LeesEprom(11, 14).toInt()*1000;
 	laagwater_delay = LeesEprom(15, 18).toInt()*1000;
 	
 	ReactieOpy();	// stuur bepaalde berichten opnieuw
 	Sendkode29(laagwater_delay, laagwater_delay);	// stuur de status "100" om progressbar uit te zetten
-	Sendkode30(Droogtijd, Droogtijd);	// stuur de status 100% om de progressbar uit te zetten
+	Sendkode30(droogtijd, droogtijd);	// stuur de status 100% om de progressbar uit te zetten
 	
 }  // einde Setup
 

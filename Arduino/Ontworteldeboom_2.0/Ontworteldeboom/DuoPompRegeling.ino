@@ -103,8 +103,7 @@ void DuoPompRegeling() {
 		break;
 	}	// einde switch case
 
-	String tydelijk = "Pompstatus = " + String(PompStatus) + " en pomp in gebruik = " + String(Pig - 8);
-	Serial.println(tydelijk);
+	
 
 
 
