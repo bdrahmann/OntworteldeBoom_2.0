@@ -16,11 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Ontworteldeboom.ino" />
-    <None Include="BT_code.ino" />
-    <None Include="DuoPompRegeling.ino" />
     <None Include="SMS_afhandeling.ino" />
     <None Include="VerwerkSensoren.ino" />
     <None Include="Laagwater.ino" />
+    <None Include="RegelPomp2.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Ontworteldeboom.vsarduino.h">

@@ -1,24 +1,31 @@
 /* Ontwortelde Boom
 ** versie 2.0
-** 
-** 20170306
-** 
+**
+**
+**
+** 20180513: DIT IS EEN TESTVERSIE
+**
 ** Uitgangspunt is de Ontwortelde Boom zoals die in juli 2016 in Velp draait.
-** Met een regensensor uit de USA: RG-11
-** Een drukmeter om het niveau in de waterbak te meten.
-** Pomp 1 en Pomp 2 werken itererend aan en uit om de wortels niet te nat te maken.
-** Geen SD card meer.
-** Bediening op afstand via GPRS.
-** Uitlezen op afstand via GPRS
-** Geen klok meer nodig
-** Geen temperatuur en Humidity voeler nodig
-** Geen lichtsensor nodig
+** De watersensor moet nog bepaad worden.
+**
+** Pomp1 werkt geheel buiten de Arduino om en levert itererend water
+** Pomp2 wordt ingeschakeld als de "uit" tijd van pomp1 groter dan 12 minuten is en blijft dan aan.
+** Bediening op afstand via GPRS mogelijk
+** Uitlezen op afstand via GPRS mogelijk
+** Pomp2 geeft SMS als hij ingeschakeld wordt
+** Pomp2 kan via GPRS in en uitgeschakeld worden.
+** Als het water in de bak onder een bepaald niveau komt wordt er een SMS gestuurd.
+** De Arduino kan via GPRS gereset worden.
+** De SMSen kunnen naar meerdere telefoonnummers gestuurd worden.
+** Deze telefoonnummers kunnen vis GPRS ge(de)activeerd worden.
+** Het volgen van het programma gebeurd via de seriele poort.
+** Spanningsuitval wordt met een UPC opgevangen en bij uitval wordt SMS verstuurd
 **
 ** Credit: The following example was used as a reference
 ** Rui Santos: http://randomnerdtutorials.wordpress.com
 ** aangepast door BDR
 ** datum: 20151120
-** 
+**
 **
 **
 */
@@ -26,107 +33,155 @@
 #include <SPI.h>
 #include <EEPROM.h>
 #include <Wire.h>
-#include <Streaming.h>
-#include "RunningAverage.h"	// running average
 
-// TODO SMScodes aanpassen
+
+String SMScode01 = "SMS kode aangezet";
+String SMScode02 = "SMS kode uitgezet";
+
 
 String SMScode08 = "De bak van de ontwortelde boom is leeg. HELP!";
-String SMScode10 = "RG-11 sensor droog; Pomp 1 van ontwortelde boom is uitgeschakeld!";
-String SMScode11 = "RG-11 sensor droog; Pomp 2 van ontwortelde boom is uitgeschakeld!";
+String SMScode09 = "Pomp2 is AAN gezet";
+String SMScode10 = "Pomp2 is UIT gezet";
+String SMScode11 = "Water sensor droog; Pomp 2 van ontwortelde boom is ingeschakeld!";
 String SMScode12 = "Testbericht Ontwortelde boom";
-String SMScode13 = "Alle sensoren van ontwortelde boom zijn stuk!";
+String SMScode13 = "";	// later in te vullen naar behoefte
+String SMScode14 = "Status pomp2 = AAN";
+String SMScode15 = "Status pomp2 = UIT";
+String SMScode16 = "Arduino BOOM wordt gereset";
 
 
-boolean resetStatus = false;	// externe reset
-
-//#define LOG_R_INTERVAL  600000 // Raindrop interval 10 min
 uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
 uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 
-// const int Pomp1 = 2;			// pin 2 is aansturen pomp 1
-const int Pomp2 = 3;			// Pin 3 is aansturen pomp 2
-// const int Simpower = 7;		// voor de sim900 kaart Shield B-v1.1
 const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH wordt gemeten
-const int Simpower = 9;			// voor de Geeetech Sim900 kaart
-const int RG_sensor = 11;		// regensensor RG-11
-const int Pomp1Aan = 4;			// pomp1 staat aan signaal
+const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart
+//const int Simpower = 7;		// voor de Sim900 in Velp kaart
+const int Pomp2 = 10;			// pin 10 voor aansturen pomp2
+const int waterSensor = 11;		// watersensor
 
-
-// Globale waarde pompregeling
+// Globale waarden pompregeling
 int PompStatus = 0;				// toestand van de Pompstatus
-int PompStatusoud = 0;			// de vorige Pompstatus
-// int handpomp1 = 0;				// geeft aan of pomp1 in handmatige status uit/aan is
-int handpomp2 = 0;				// geeft aan of pomp2 in handmatige status uit/aan is
 
-uint32_t AAN1_INTERVAL = 120000;	// pomp2 aan tijd 2 minuten
-uint32_t UIT1_INTERVAL =  60000;	// pomp2 uit tijd 1 minuten
-// TODO aan en uit tijden van buiten af instellen
-uint32_t looptijdaanuit = 0;	// loop tijdens het doorlopen van de aan-uit tijd
-boolean SWPomp1Aan = false;		// switch schakelt bij eerste doorkomst als Pomp1 aan staat
-
-boolean sw_laagwater = true;	// begin met laagwater
+boolean vlotter = false;			// geeft aan of de vlotter laagwater ziet; true=laag
+boolean sw_laagwater = false;	// begin met laagwater
 boolean laagwateroud;			// vorige meting laagwater
-uint32_t laagwater_delay = 0;	// tijdsvertraging in laagwater om dender te voorkomen (10000)
-uint32_t looptijdLL = 0;		// loopt tijdens het testen van de laagwatervlotter
+uint32_t laagwater_delay = 10000;	// tijdsvertraging in laagwater om dender te voorkomen (10000)
+uint32_t looptijdLL = 0;		// tijd tijdens het testen van de laagwatervlotter
+uint32_t lopende_vlottertijd = 0; // loopt tijdens het testen van de laagwatervlotter
 
 // variabelen voor sensorcontrole
-boolean Rain_SMS_Gestuurd = false;	// stuur slechts ��n keer een SMS als alle sensoren stuk zijn
+//boolean Rain_SMS_Gestuurd = false;	// stuur slechts ��n keer een SMS als alle sensoren stuk zijn
 boolean Droog = true;			// variable om droog vast te stellen
-uint32_t droogtijd = 0;			// tijd om druppelsensoren nat te laten worden; van buiten instelbaar (20000)
-uint32_t droogtijdLL = 0;		// loopt tijdens het testen van de Droogtijd
+//uint32_t droogtijd = 720000;	// tijd dat Pomp1 uit staat < 12 minuten van buiten instelbaar
+uint32_t droogtijd = 7200;		// tijdens testen kleine tijd
+uint32_t droogtijdLL = 0;		// tijd tijdens het testen van de Droogtijd
+uint32_t lopende_droogtijd = 0;	// loopt tijdens het testen van de Droogtijd
 
 // Global variable for SMS yes or no
-char SMScode = '0';			//stuur sms bij alarmsituaties, default uit
+char SMScode = '1';			//stuur sms bij alarmsituaties, default aan
 String telefoonnummer = "";
+String telefoonnummer2 = "";
+String telefoonnummer3 = "";
 boolean bericht_gestuurd = false;	// om te voorkomen dat sms testbericht meer dan ��n per minuut gestuurd wordt
+String textOpnieuw = "";			// tekst voor start GPRS module
+String textMessage = "";			// input en output voor GPRS
+String SMSstatus = "niet verbonden";				// 
 
 void setup() {
-	String PS;		// is de PrintString
-	
-	//pinMode(Pomp1, OUTPUT);
-	//digitalWrite(Pomp1, LOW);	// zet pomp1 uit. De pompen zijn active LOW
 	pinMode(Pomp2, OUTPUT);
 	digitalWrite(Pomp2, LOW);	// zet pomp2 uit
-	pinMode(Pomp1Aan, INPUT);	// digital Pin to INPUT for Pomp1 aan
-	pinMode(RG_sensor, INPUT);	// digital Pin to INPUT for the RG-11 sensor
-	
+	pinMode(waterSensor, INPUT);	// digital Pin to INPUT for the water sensor
+
 	laagwateroud = digitalRead(VlotterLaag);	// lees de beginstand van de vlotter
-	
+
 	Serial.begin(9600);			// output via serial monitor
 	Serial1.begin(19200);		// connection to GPRS network
-	Serial3.begin(19200);		// Default connection rate BT
-	Serial.println();
-	PS = "In setup is pomp 2 uitgezet"; Serial.println(PS);
+	//Serial3.begin(19200);		// Default connection rate BT
+	establishContact();  // send a byte to establish contact until receiver responds 
+
+	// start GPRS module en log on
+	// Automatically turn on the shield
+	PrintProc('k', SMSstatus);
+	startModem(textOpnieuw);
+	if (textMessage.indexOf("DOWN") >= 0) {	// als modem uit is gezet
+		PrintProc('j',"modem is uitgezet. Opnieuw opstarten");
+		textOpnieuw = "opnieuw ";
+		startModem(textOpnieuw);
+	}
+
+	// Give time to your GSM shield log on to network
+	PrintProc('j',"GPRS modem logt on...");
+	delay(20000);
+	PrintProc('j',"GPRS modem ready...");
+	SMSstatus = "verbonden met netwerk";
+	PrintProc('k',SMSstatus);
+	PrintProc('j',"modem wordt in SMS mode gezet");
+	Serial1.print("AT+CMGF=1\r");	// AT command to set Serial1 to SMS mode
+	delay(100);
+	Serial1.print("AT+CNMI=2,2,0,0,0\r");	// Set module to send SMS data to serial out upon receipt 
+	delay(100);
+	textMessage = Serial1.readString();
+	PrintProc('i',textMessage);
+	delay(10);
+
 		
 	/* EPROM plaats
 	0 = SMS code ja/nee = 1/0
 	1 - 10 = telefoonnummer
 	11 - 14 = Droogtijd in sec
 	15 - 18 = Laagwater_delay in sec
+	19 - 28 = telefoonnummer2
+	29 - 38 = telefoonnummer3
 	*/
+
+	
 	// Vaste gegevens uit EPROM ophalen
 	SMScode = EEPROM.read(0); // SMScode ophalen uit EPROM op plaats 0
 	telefoonnummer = "";
 	telefoonnummer = LeesEprom(1, 10);
-	Serial.print("telefoonnummer uit EPROM =  "); Serial.println(telefoonnummer);
-	droogtijd = LeesEprom(11, 14).toInt()*1000;
-	laagwater_delay = LeesEprom(15, 18).toInt()*1000;
-	
-	ReactieOpy();	// stuur bepaalde berichten opnieuw
-	Sendkode29(laagwater_delay, laagwater_delay);	// stuur de status "100" om progressbar uit te zetten
-	Sendkode30(droogtijd, droogtijd);	// stuur de status 100% om de progressbar uit te zetten
+	droogtijd = LeesEprom(11, 14).toInt() * 1000;
+	laagwater_delay = LeesEprom(15, 18).toInt() * 1000;
+	PrintProc('c', String(laagwater_delay));
+	telefoonnummer2 = LeesEprom(19, 28);
+	telefoonnummer3 = LeesEprom(29, 38);
+	PrintProc('m', String(SMScode));
+	PrintProc('n', String(telefoonnummer));
+	PrintProc('o', String(telefoonnummer2));
+	PrintProc('p', String(telefoonnummer3));
 	
 }  // einde Setup
 
-void loop() {
+void startModem(String opnieuw) {
+	PrintProc('j',"GPRS modem wordt " + opnieuw + "gestart...");
+	digitalWrite(9, HIGH);
+	delay(1000);
+	digitalWrite(9, LOW);
+	delay(5000);
+	PrintProc('j',"GPRS modem is " + opnieuw + "gestart...");
+	textMessage = Serial1.readString();
+	PrintProc('i',textMessage);
+	delay(10);
+}
 
-	DuoPompRegeling();	// regelt met twee pompen
-	LeesRegenSensor();	// de regensensor RG-11
-	LaagWater();	// routine om de laagwatervlotter uit te lezen
+void establishContact() {
+	while (Serial.available() <= 0) {
+		Serial.print("A#");   // send a capital A
+		delay(300);
+	}
+	
+}
+
+void loop() {
+	
+	LeesUPS();			// lees de UPS uit
+	LeesSMS();			// kijk of er sms'jes gestuurd zijn
+	LeesLaagwater();	// routine om de laagwatervlotter uit te lezen
+	LeesWatersensor();	// kijk of er water gemeten wordt
+	RegelPomp2();		// regel pomp2
+	
+
+	// TODO is routine Testsignaal nog nodig?
 	TestSignaal();     // Stuurt een teken van leven naar SMS
-	ReadBT();		// Lees de BlueTooth input
-	SendBT();		// Zend info naar Android toestel	
 
 }  //einde loop
 
@@ -134,17 +189,15 @@ void TestSignaal() {    // Stuurt een teken van leven naar SMS
 
 						// stuur iedere dag om 12:00 uur een Testbericht
 	// TODO bedenk een testsignaalroutine
-	
+
 
 }  // einde TestSignaal
 
-int freeRam() {
+int freeRam() {		// om te controleren hoeveel RAM er over is. Kan later weg
 	extern int __heap_start, *__brkval;
 	int v;
 	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
-
-
 
 String LeesEprom(int b, int e) {
 	String result = "";
@@ -154,4 +207,24 @@ String LeesEprom(int b, int e) {
 		result = result + String(x - 48); // en nu staat er een getalstring
 	}
 	return result;
+}
+
+void SchrijfEprom(int b, int e, String info) {		// schrijf de info in de EPROM
+	for (int i = b; i < e + 1; i = i + 1) {
+		EEPROM.write(i, info.charAt(i - b));
+		delay(20);	// tijdsvertraging nodig
+	}
+}
+
+void LeesUPS() {		// UPS uitlezen om te kijken of stroom is uitgevallen
+
+}
+
+void PrintProc(char k, String record) {	// routine om naar Processing te printen
+	/*
+	char geef kode aan, en bepaalt plaats waar String wordt weergegeven
+	*/
+	Serial.print (k);
+	Serial.print (record);
+	Serial.print("#");
 }
