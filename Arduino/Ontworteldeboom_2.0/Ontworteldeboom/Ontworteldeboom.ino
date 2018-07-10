@@ -6,7 +6,7 @@
 ** 20180513: DIT IS EEN TESTVERSIE
 **
 ** Uitgangspunt is de Ontwortelde Boom zoals die in juli 2016 in Velp draait.
-** De watersensor moet nog bepaad worden.
+** De watersensor moet nog bepaald worden.
 **
 ** Pomp1 werkt geheel buiten de Arduino om en levert itererend water
 ** Pomp2 wordt ingeschakeld als de "uit" tijd van pomp1 groter dan 12 minuten is en blijft dan aan.
@@ -16,10 +16,13 @@
 ** Pomp2 kan via GPRS in en uitgeschakeld worden.
 ** Als het water in de bak onder een bepaald niveau komt wordt er een SMS gestuurd.
 ** De Arduino kan via GPRS gereset worden.
-** De SMSen kunnen naar meerdere telefoonnummers gestuurd worden.
-** Deze telefoonnummers kunnen vis GPRS ge(de)activeerd worden.
 ** Het volgen van het programma gebeurd via de seriele poort.
 ** Spanningsuitval wordt met een UPC opgevangen en bij uitval wordt SMS verstuurd
+**
+** nog niet gerealiseerd:
+** De SMSen kunnen naar meerdere telefoonnummers gestuurd worden.
+** Deze telefoonnummers kunnen vis GPRS ge(de)activeerd worden.
+**
 **
 ** Credit: The following example was used as a reference
 ** Rui Santos: http://randomnerdtutorials.wordpress.com
@@ -38,7 +41,6 @@
 String SMScode01 = "SMS kode aangezet";
 String SMScode02 = "SMS kode uitgezet";
 
-
 String SMScode08 = "De bak van de ontwortelde boom is leeg. HELP!";
 String SMScode09 = "Pomp2 is AAN gezet";
 String SMScode10 = "Pomp2 is UIT gezet";
@@ -48,6 +50,8 @@ String SMScode13 = "";	// later in te vullen naar behoefte
 String SMScode14 = "Status pomp2 = AAN";
 String SMScode15 = "Status pomp2 = UIT";
 String SMScode16 = "Arduino BOOM wordt gereset";
+String SMScode17 = "Netspanning weggevallen bij de boom";
+String SMScode18 = "Netspanning weer terug bij de boom";
 
 
 uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
@@ -58,6 +62,7 @@ const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart
 //const int Simpower = 7;		// voor de Sim900 in Velp kaart
 const int Pomp2 = 10;			// pin 10 voor aansturen pomp2
 const int waterSensor = 11;		// watersensor
+const int UPSsensor = A0;		// sensor voor UPC stroomuitval
 
 // Globale waarden pompregeling
 int PompStatus = 0;				// toestand van de Pompstatus
@@ -76,6 +81,10 @@ boolean Droog = true;			// variable om droog vast te stellen
 uint32_t droogtijd = 7200;		// tijdens testen kleine tijd
 uint32_t droogtijdLL = 0;		// tijd tijdens het testen van de Droogtijd
 uint32_t lopende_droogtijd = 0;	// loopt tijdens het testen van de Droogtijd
+
+// variabelen voor UPC sensorcontrole
+boolean netspanning_weg = false;
+
 
 // Global variable for SMS yes or no
 char SMScode = '1';			//stuur sms bij alarmsituaties, default aan
@@ -164,11 +173,11 @@ void startModem(String opnieuw) {
 }
 
 void establishContact() {
-	while (Serial.available() <= 0) {
-		Serial.print("A#");   // send a capital A
-		delay(300);
+	uint32_t looptijd = millis();
+	while (((Serial.available() <= 0) & (millis() - looptijd) <= 10000)) {
+				Serial.print("A#");   // send a capital A
+				delay(300);
 	}
-	
 }
 
 void loop() {
@@ -217,7 +226,39 @@ void SchrijfEprom(int b, int e, String info) {		// schrijf de info in de EPROM
 }
 
 void LeesUPS() {		// UPS uitlezen om te kijken of stroom is uitgevallen
+	
+	// read the input on analog pin UPCsensor:
+	int sensorValue = analogRead(UPSsensor);
+	
+	//float voltage = sensorValue * (10.0 / 1023.0); // oorsptonkelijke statement
+	long voltage = map(sensorValue, 0, 100, 0, 5);		//  het nieuwe statement. Gemaakt om het kleine verschil tussen lamp aan en lamp uit van de UPS kenbaar te maken.
+	PrintProc('q', String(voltage));
+	
+	if (voltage < 1)			// lamp is uit; 
+		if (netspanning_weg) {	// dan even kijken of het het piepje was
+			delay(1000);					// even wachten
+			sensorValue = analogRead(UPSsensor);  // nog een keer lezen
+			voltage = map(sensorValue, 0, 100, 0, 5);  // mappen
+			if (voltage < 1) {	// lampje is nog steeds uit, dus netspanning is weer terug
+				netspanning_weg = false;
+				StuurBericht("18"); // zend SMS
+			}
+			else   // het lampje brandt weer, dus de netspanning is nog steeds weg
+				;	// doe niks
+		}
+		else   // netspanning dus aanwezig
+			;	// doe niks
+	else  {  // lamp is aan = netspanning is weg
+		if (!netspanning_weg) {	// nog niet gemeld
+			netspanning_weg = true;			// zet de switch
+			StuurBericht ("17"); // stuur SMS
+		}
 
+
+	}
+	if (netspanning_weg) PrintProc('r', "1");
+	else PrintProc('r', "0");
+	
 }
 
 void PrintProc(char k, String record) {	// routine om naar Processing te printen

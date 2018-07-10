@@ -76,6 +76,17 @@ void sendSMS(String kode) {
 		if (kode == "16") {		// Arduino wordt gereset
 			Serial1.println(SMScode16);
 			PrintProc('j', SMScode16);
+			goto gedaan;
+		}
+		if (kode == "17") {		// Netstroom weggevallen
+			Serial1.println(SMScode17);
+			PrintProc('j', SMScode17);
+			goto gedaan;
+		}
+		if (kode == "18") {		// Netstroom weer terug
+			Serial1.println(SMScode18);
+			PrintProc('j', SMScode18);
+			
 		}
 		gedaan:
 		delay(100);
