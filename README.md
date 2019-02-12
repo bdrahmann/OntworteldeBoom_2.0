@@ -1,5 +1,6 @@
 # OntworteldeBoom_2.0
 versie 2017 van de Ontwortelde Boom in Velp
+versie 2019 van de Ontwortelde Boom in Arnhem
 
 Doel van het programma.
 Dit programma is bedoeld voor de Ontwortelde Boom zoals die is opgesteld in Velp bij de Hogeschool Larenstein.
