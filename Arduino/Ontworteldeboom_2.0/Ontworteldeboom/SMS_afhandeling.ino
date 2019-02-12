@@ -1,6 +1,6 @@
 /*	Afhandeling SMS en schrijven naar SD card
 
-
+** versie 2.0
 */
 void StuurBericht(String kode) {
 

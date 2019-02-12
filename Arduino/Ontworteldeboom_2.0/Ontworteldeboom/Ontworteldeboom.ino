@@ -2,8 +2,8 @@
 ** versie 2.0
 **
 **
-**
-** 20180513: DIT IS EEN TESTVERSIE
+** versie van Arnhem
+** versie van Velp
 **
 ** Uitgangspunt is de Ontwortelde Boom zoals die in juli 2016 in Velp draait.
 ** De watersensor moet nog bepaald worden.
