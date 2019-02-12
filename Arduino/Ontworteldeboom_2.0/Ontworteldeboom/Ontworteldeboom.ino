@@ -3,7 +3,7 @@
 **
 **
 **
-** 20180513: DIT IS EEN TESTVERSIE
+** De versie is getest in Velp
 **
 ** Uitgangspunt is de Ontwortelde Boom zoals die in juli 2016 in Velp draait.
 ** De watersensor moet nog bepaald worden.
@@ -52,14 +52,17 @@ String SMScode15 = "Status pomp2 = UIT";
 String SMScode16 = "Arduino BOOM wordt gereset";
 String SMScode17 = "Netspanning weggevallen bij de boom";
 String SMScode18 = "Netspanning weer terug bij de boom";
+   
+
+
 
 
 uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
 uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 
 const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH wordt gemeten
-const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart
-//const int Simpower = 7;		// voor de Sim900 in Velp kaart
+//const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart
+const int Simpower = 7;		// voor de Sim900 in Velp kaart
 const int Pomp2 = 10;			// pin 10 voor aansturen pomp2
 const int waterSensor = 11;		// watersensor
 const int UPSsensor = A0;		// sensor voor UPC stroomuitval
@@ -77,8 +80,8 @@ uint32_t lopende_vlottertijd = 0; // loopt tijdens het testen van de laagwatervl
 // variabelen voor sensorcontrole
 //boolean Rain_SMS_Gestuurd = false;	// stuur slechts ��n keer een SMS als alle sensoren stuk zijn
 boolean Droog = true;			// variable om droog vast te stellen
-//uint32_t droogtijd = 720000;	// tijd dat Pomp1 uit staat < 12 minuten van buiten instelbaar
-uint32_t droogtijd = 7200;		// tijdens testen kleine tijd
+uint32_t droogtijd = 720000;	// tijd dat Pomp1 uit staat < 12 minuten van buiten instelbaar
+//uint32_t droogtijd = 7200;		// tijdens testen kleine tijd
 uint32_t droogtijdLL = 0;		// tijd tijdens het testen van de Droogtijd
 uint32_t lopende_droogtijd = 0;	// loopt tijdens het testen van de Droogtijd
 
@@ -162,9 +165,9 @@ void setup() {
 
 void startModem(String opnieuw) {
 	PrintProc('j',"GPRS modem wordt " + opnieuw + "gestart...");
-	digitalWrite(9, HIGH);
+	digitalWrite(Simpower, HIGH);
 	delay(1000);
-	digitalWrite(9, LOW);
+	digitalWrite(Simpower, LOW);
 	delay(5000);
 	PrintProc('j',"GPRS modem is " + opnieuw + "gestart...");
 	textMessage = Serial1.readString();
@@ -172,7 +175,7 @@ void startModem(String opnieuw) {
 	delay(10);
 }
 
-void establishContact() {
+void establishContact() {	// om contact te maken met Processing
 	uint32_t looptijd = millis();
 	while (((Serial.available() <= 0) & (millis() - looptijd) <= 10000)) {
 				Serial.print("A#");   // send a capital A
