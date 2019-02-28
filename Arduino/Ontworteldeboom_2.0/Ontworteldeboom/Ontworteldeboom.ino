@@ -5,7 +5,6 @@
 **
 ** De versie is getest in Velp
 ** Deze versie wordt gebuikt in Arnhem
-=======
 **
 ** versie van Arnhem
 ** versie van Velp
