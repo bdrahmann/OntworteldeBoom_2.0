@@ -109,7 +109,7 @@ void setup() {
 	pinMode(Pomp2, OUTPUT);
 	digitalWrite(Pomp2, LOW);	// zet pomp2 uit
 	pinMode(waterSensor, INPUT_PULLUP);	// digital Pin to INPUT for the water sensor
-
+	pinMode(VlotterLaag, INPUT_PULLUP);	// digital pin voor de Vlotterstand
 	laagwateroud = digitalRead(VlotterLaag);	// lees de beginstand van de vlotter
 
 	emon1.voltage(2, 234.26, 1.7);	// Voltage(inputPin,calibration,phase_shift)
