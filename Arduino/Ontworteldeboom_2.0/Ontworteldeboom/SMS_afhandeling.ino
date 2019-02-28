@@ -1,6 +1,12 @@
+<<<<<<< HEAD
+/*	Afhandeling SMS
+** Versie 2.0
+
+=======
 /*	Afhandeling SMS en schrijven naar SD card
 
 ** versie 2.0
+>>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
 */
 void StuurBericht(String kode) {
 
@@ -275,6 +281,3 @@ void LeesSMS() {	// kijk of er SMS'jes gestuurd zijn
 
 
 }
-
-
-

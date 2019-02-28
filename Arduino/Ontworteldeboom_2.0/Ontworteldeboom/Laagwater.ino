@@ -1,4 +1,5 @@
 /* Ontwortelde Boom
+**
 ** versie 2.0
 **
 ** 20180513
@@ -80,7 +81,3 @@ void StuurSMS() { // het versturen van een SMS
 	
 
 }
-
-
-
-

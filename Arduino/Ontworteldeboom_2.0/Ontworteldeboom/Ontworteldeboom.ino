@@ -1,14 +1,22 @@
 /* Ontwortelde Boom
 ** versie 2.0
 **
+<<<<<<< HEAD
+** 
+**
+** De versie is getest in Velp
+** Deze versie wordt gebuikt in Arnhem
+=======
 **
 ** versie van Arnhem
 ** versie van Velp
+>>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
 **
 ** Uitgangspunt is de Ontwortelde Boom zoals die in juli 2016 in Velp draait.
 ** De watersensor moet nog bepaald worden.
 **
 ** Pomp1 werkt geheel buiten de Arduino om en levert itererend water
+** Als pomp1 uit staat wordt signaal gegeven aan pin 3
 ** Pomp2 wordt ingeschakeld als de "uit" tijd van pomp1 groter dan 12 minuten is en blijft dan aan.
 ** Bediening op afstand via GPRS mogelijk
 ** Uitlezen op afstand via GPRS mogelijk
@@ -16,8 +24,9 @@
 ** Pomp2 kan via GPRS in en uitgeschakeld worden.
 ** Als het water in de bak onder een bepaald niveau komt wordt er een SMS gestuurd.
 ** De Arduino kan via GPRS gereset worden.
-** Het volgen van het programma gebeurd via de seriele poort.
-** Spanningsuitval wordt met een UPC opgevangen en bij uitval wordt SMS verstuurd
+** Het volgen van het programma gebeurt via de seriele poort.
+** De aanwezigheid van de netspanning wordt gemeten met een ZMPT101B
+** Als de netspanning uitvalt, wordt de Arduino gevoed door een UPS, zodat een waarschuwings SMS gestuurd kan worden.
 **
 ** nog niet gerealiseerd:
 ** De SMSen kunnen naar meerdere telefoonnummers gestuurd worden.
@@ -36,7 +45,7 @@
 #include <SPI.h>
 #include <EEPROM.h>
 #include <Wire.h>
-
+#include "EmonLib.h"	// Library voor ZMPT101B
 
 String SMScode01 = "SMS kode aangezet";
 String SMScode02 = "SMS kode uitgezet";
@@ -52,17 +61,26 @@ String SMScode15 = "Status pomp2 = UIT";
 String SMScode16 = "Arduino BOOM wordt gereset";
 String SMScode17 = "Netspanning weggevallen bij de boom";
 String SMScode18 = "Netspanning weer terug bij de boom";
+<<<<<<< HEAD
+=======
 
+>>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
 
 uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
 uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 
+const int Pomp1 = 3;			// pin 3 geeft status pomp1 aan
 const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH wordt gemeten
+<<<<<<< HEAD
+const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart, kaart bij de boom
+//const int Simpower = 7;		// voor de Sim900 in het testkastje
+=======
 const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart
 //const int Simpower = 7;		// voor de Sim900 in Velp kaart
+>>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
 const int Pomp2 = 10;			// pin 10 voor aansturen pomp2
 const int waterSensor = 11;		// watersensor
-const int UPSsensor = A0;		// sensor voor UPC stroomuitval
+const int spanningsSensor = A2;		// sensor voor spanningsuitval
 
 // Globale waarden pompregeling
 int PompStatus = 0;				// toestand van de Pompstatus
@@ -74,7 +92,7 @@ uint32_t laagwater_delay = 10000;	// tijdsvertraging in laagwater om dender te v
 uint32_t looptijdLL = 0;		// tijd tijdens het testen van de laagwatervlotter
 uint32_t lopende_vlottertijd = 0; // loopt tijdens het testen van de laagwatervlotter
 
-// variabelen voor sensorcontrole
+// variabelen voor regensensorcontrole
 //boolean Rain_SMS_Gestuurd = false;	// stuur slechts ��n keer een SMS als alle sensoren stuk zijn
 boolean Droog = true;			// variable om droog vast te stellen
 //uint32_t droogtijd = 720000;	// tijd dat Pomp1 uit staat < 12 minuten van buiten instelbaar
@@ -82,9 +100,10 @@ uint32_t droogtijd = 7200;		// tijdens testen kleine tijd
 uint32_t droogtijdLL = 0;		// tijd tijdens het testen van de Droogtijd
 uint32_t lopende_droogtijd = 0;	// loopt tijdens het testen van de Droogtijd
 
-// variabelen voor UPC sensorcontrole
+// variabelen voor spannings sensorcontrole
+EnergyMonitor emon1;	// create an instance
 boolean netspanning_weg = false;
-
+long netspanning = 0;	// de gemeten netspanning
 
 // Global variable for SMS yes or no
 char SMScode = '1';			//stuur sms bij alarmsituaties, default aan
@@ -97,16 +116,19 @@ String textMessage = "";			// input en output voor GPRS
 String SMSstatus = "niet verbonden";				// 
 
 void setup() {
+	pinMode(Pomp1, INPUT);		// digital Pin geeft aan of Pomp1 aanstaat
 	pinMode(Pomp2, OUTPUT);
 	digitalWrite(Pomp2, LOW);	// zet pomp2 uit
-	pinMode(waterSensor, INPUT);	// digital Pin to INPUT for the water sensor
+	pinMode(waterSensor, INPUT_PULLUP);	// digital Pin to INPUT for the water sensor
 
 	laagwateroud = digitalRead(VlotterLaag);	// lees de beginstand van de vlotter
+
+	emon1.voltage(2, 234.26, 1.7);	// Voltage(inputPin,calibration,phase_shift)
 
 	Serial.begin(9600);			// output via serial monitor
 	Serial1.begin(19200);		// connection to GPRS network
 	//Serial3.begin(19200);		// Default connection rate BT
-	establishContact();  // send a byte to establish contact until receiver responds 
+	establishContact();  // send a byte to establish contact met serial monitor
 
 	// start GPRS module en log on
 	// Automatically turn on the shield
@@ -132,8 +154,7 @@ void setup() {
 	textMessage = Serial1.readString();
 	PrintProc('i',textMessage);
 	delay(10);
-
-		
+			
 	/* EPROM plaats
 	0 = SMS code ja/nee = 1/0
 	1 - 10 = telefoonnummer
@@ -142,14 +163,13 @@ void setup() {
 	19 - 28 = telefoonnummer2
 	29 - 38 = telefoonnummer3
 	*/
-
-	
+		
 	// Vaste gegevens uit EPROM ophalen
 	SMScode = EEPROM.read(0); // SMScode ophalen uit EPROM op plaats 0
 	telefoonnummer = "";
 	telefoonnummer = LeesEprom(1, 10);
-	droogtijd = LeesEprom(11, 14).toInt() * 1000;
-	laagwater_delay = LeesEprom(15, 18).toInt() * 1000;
+	droogtijd = LeesEprom(11, 14).toInt() * 1000;	// converteren naar milliseconden
+	laagwater_delay = LeesEprom(15, 18).toInt() * 1000;		// converteren naar milliseconden
 	PrintProc('c', String(laagwater_delay));
 	telefoonnummer2 = LeesEprom(19, 28);
 	telefoonnummer3 = LeesEprom(29, 38);
@@ -182,7 +202,7 @@ void establishContact() {
 
 void loop() {
 	
-	LeesUPS();			// lees de UPS uit
+	LeesSpanningssensor();	// kijk of de netspanning aanwezig is
 	LeesSMS();			// kijk of er sms'jes gestuurd zijn
 	LeesLaagwater();	// routine om de laagwatervlotter uit te lezen
 	LeesWatersensor();	// kijk of er water gemeten wordt
@@ -202,11 +222,6 @@ void TestSignaal() {    // Stuurt een teken van leven naar SMS
 
 }  // einde TestSignaal
 
-int freeRam() {		// om te controleren hoeveel RAM er over is. Kan later weg
-	extern int __heap_start, *__brkval;
-	int v;
-	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
-}
 
 String LeesEprom(int b, int e) {
 	String result = "";
@@ -225,41 +240,8 @@ void SchrijfEprom(int b, int e, String info) {		// schrijf de info in de EPROM
 	}
 }
 
-void LeesUPS() {		// UPS uitlezen om te kijken of stroom is uitgevallen
-	
-	// read the input on analog pin UPCsensor:
-	int sensorValue = analogRead(UPSsensor);
-	
-	//float voltage = sensorValue * (10.0 / 1023.0); // oorsptonkelijke statement
-	long voltage = map(sensorValue, 0, 100, 0, 5);		//  het nieuwe statement. Gemaakt om het kleine verschil tussen lamp aan en lamp uit van de UPS kenbaar te maken.
-	PrintProc('q', String(voltage));
-	
-	if (voltage < 1)			// lamp is uit; 
-		if (netspanning_weg) {	// dan even kijken of het het piepje was
-			delay(1000);					// even wachten
-			sensorValue = analogRead(UPSsensor);  // nog een keer lezen
-			voltage = map(sensorValue, 0, 100, 0, 5);  // mappen
-			if (voltage < 1) {	// lampje is nog steeds uit, dus netspanning is weer terug
-				netspanning_weg = false;
-				StuurBericht("18"); // zend SMS
-			}
-			else   // het lampje brandt weer, dus de netspanning is nog steeds weg
-				;	// doe niks
-		}
-		else   // netspanning dus aanwezig
-			;	// doe niks
-	else  {  // lamp is aan = netspanning is weg
-		if (!netspanning_weg) {	// nog niet gemeld
-			netspanning_weg = true;			// zet de switch
-			StuurBericht ("17"); // stuur SMS
-		}
 
-
-	}
-	if (netspanning_weg) PrintProc('r', "1");
-	else PrintProc('r', "0");
 	
-}
 
 void PrintProc(char k, String record) {	// routine om naar Processing te printen
 	/*

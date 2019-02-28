@@ -1,10 +1,12 @@
-/*	Alleen pomp2 wordt aangestuurd aangestuurd.
+/*	Alleen pomp2 wordt aangestuurd.
+*** Versie 2.0
 **
 ** Pomp 2 wordt aangestuurd en gemonitord.
 **
 ** Pomp wordt aangezet door Arduino uitgang Hoog te maken. Het relais valt dan af, de pomp gaat aan.
 ** Het relais heeft een wisselschakelaar. De pomp moet aan de juiste schakelstand aangesloten worden.
 ** Dat is: Relais uit: verbinding aan.
+** 
 **
 ** versie 2.0
 **
@@ -56,4 +58,5 @@ void RegelPomp2() {
 	PrintProc('d', String(PompStatus));
 	PrintProc('e', String(lopende_droogtijd));	// lopende droogtijd
 	PrintProc('f', String(droogtijd));		// max droogtijd
+	PrintProc('s', String(digitalRead(Pomp1)));
 }	// einde RegelPomp2
