@@ -75,9 +75,8 @@ const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH 
 const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart, kaart bij de boom
 //const int Simpower = 7;		// voor de Sim900 in het testkastje
 =======
-const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart
-//const int Simpower = 7;		// voor de Sim900 in Velp kaart
->>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
+const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart en de kaart bij de boom
+//const int Simpower = 7;		// voor de Sim900
 const int Pomp2 = 10;			// pin 10 voor aansturen pomp2
 const int waterSensor = 11;		// watersensor
 const int spanningsSensor = A2;		// sensor voor spanningsuitval
