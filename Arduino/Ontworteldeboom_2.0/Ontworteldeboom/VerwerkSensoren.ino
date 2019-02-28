@@ -5,6 +5,7 @@
 ** versie 2.0
 **
 ** 20170306
+** 20190228 spanningssensor toegevoegd
 */
 
 void LeesWatersensor() {		// de routine om regensensor RG-11 uit te lezen

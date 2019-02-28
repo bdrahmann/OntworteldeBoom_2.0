@@ -1,8 +1,7 @@
 /* Ontwortelde Boom
 ** versie 2.0
 **
-<<<<<<< HEAD
-** 
+** datum 20190228
 **
 ** De versie is getest in Velp
 ** Deze versie wordt gebuikt in Arnhem
@@ -10,7 +9,6 @@
 **
 ** versie van Arnhem
 ** versie van Velp
->>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
 **
 ** Uitgangspunt is de Ontwortelde Boom zoals die in juli 2016 in Velp draait.
 ** De watersensor moet nog bepaald worden.
@@ -61,22 +59,15 @@ String SMScode15 = "Status pomp2 = UIT";
 String SMScode16 = "Arduino BOOM wordt gereset";
 String SMScode17 = "Netspanning weggevallen bij de boom";
 String SMScode18 = "Netspanning weer terug bij de boom";
-<<<<<<< HEAD
-=======
 
->>>>>>> fd473adc80dfddc8dd04db7e406b56171728e665
 
 uint32_t LOG_LL_INTERVAL = 0;   // SMS LaagWater interval bij start 0
 uint32_t syncTimeLL = 0;		// time of last SMS LaagWater
 
 const int Pomp1 = 3;			// pin 3 geeft status pomp1 aan
 const int VlotterLaag = 8;      // pin 8 is alarmniveau: geeft signaal als HIGH wordt gemeten
-<<<<<<< HEAD
-const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart, kaart bij de boom
 //const int Simpower = 7;		// voor de Sim900 in het testkastje
-=======
 const int Simpower = 9;			// voor de oude Sim900 kaart en de	keystudio kaart en de kaart bij de boom
-//const int Simpower = 7;		// voor de Sim900
 const int Pomp2 = 10;			// pin 10 voor aansturen pomp2
 const int waterSensor = 11;		// watersensor
 const int spanningsSensor = A2;		// sensor voor spanningsuitval

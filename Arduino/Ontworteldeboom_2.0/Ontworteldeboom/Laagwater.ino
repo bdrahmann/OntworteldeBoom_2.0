@@ -14,7 +14,6 @@
 */
 
 void LeesLaagwater() {
-	//TODO printopdrachten sturen
 	vlotter = digitalRead(VlotterLaag);
 	if (sw_laagwater == true) {	// er was te weinig water in de bak
 		if (vlotter == HIGH) {	// en er is nog steeds te weinig water
@@ -78,6 +77,4 @@ void StuurSMS() { // het versturen van een SMS
 	else {
 		// do nothing
 	}
-	
-
 }
